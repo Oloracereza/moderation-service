@@ -7,43 +7,30 @@ import java.util.Objects;
 @Embeddable
 public class ModerationPK implements Serializable {
 
-    private Integer userId;
-    private Integer reportedUserId;
-    private Integer publicationId;
-    private Integer moderationTypeId;
+    private String contentId;
+    private String userId;
 
     public ModerationPK() {}
 
-    public Integer getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Integer userId) {
+    public ModerationPK(String contentId, String userId) {
+        this.contentId = contentId;
         this.userId = userId;
     }
 
-    public Integer getReportedUserId() {
-        return reportedUserId;
+    public String getContentId() {
+        return contentId;
     }
 
-    public void setReportedUserId(Integer reportedUserId) {
-        this.reportedUserId = reportedUserId;
+    public void setContentId(String contentId) {
+        this.contentId = contentId;
     }
 
-    public Integer getPublicationId() {
-        return publicationId;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setPublication(Integer publicationId) {
-        this.publicationId = publicationId;
-    }
-
-    public Integer getModerationTypeId() {
-        return moderationTypeId;
-    }
-
-    public void setModerationTypeId(Integer moderationTypeId) {
-        this.moderationTypeId = moderationTypeId;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     @Override
@@ -51,14 +38,11 @@ public class ModerationPK implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ModerationPK that = (ModerationPK) o;
-        return Objects.equals(userId, that.userId) &&
-               Objects.equals(reportedUserId, that.reportedUserId) &&
-               Objects.equals(publicationId, that.publicationId) &&
-               Objects.equals(moderationTypeId, that.moderationTypeId);
+        return Objects.equals(contentId, that.contentId) && Objects.equals(userId, that.userId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userId, reportedUserId, publicationId, moderationTypeId);
+        return Objects.hash(contentId, userId);
     }
 }

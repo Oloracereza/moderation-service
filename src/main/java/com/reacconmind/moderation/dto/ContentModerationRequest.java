@@ -22,4 +22,12 @@ public class ContentModerationRequest {
     
     @NotNull(message = "Content type cannot be null")
     private ModerationResult.ContentType contentType;
+
+    public ModerationResult.ContentType getContentType() {
+        return contentType;
+    }
+
+    public String getContentId() {
+        return contentId;
+    }
 }

@@ -7,21 +7,25 @@ import com.reacconmind.moderation.service.ModerationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Slf4j
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/v1/moderation")
 @Tag(name = "Content Moderation", description = "API endpoints for content moderation")
 public class ModerationController {
 
-    private final ModerationService moderationService;
+    private static final Logger log = LoggerFactory.getLogger(ModerationController.class);
+
+private final ModerationService moderationService;
+
+public ModerationController(ModerationService moderationService) {
+    this.moderationService = moderationService;
+}
 
     @PostMapping("/moderate")
     @Operation(summary = "Moderate content", description = "Analyzes content for inappropriate or harmful material")
@@ -42,27 +46,19 @@ public class ModerationController {
     }
 
     @GetMapping("/category/{category}")
-    @Operation(summary = "Get moderations by category", description = "Retrieves moderations filtered by category")
-    public ResponseEntity<List<ModerationResult>> getModerationsByCategory(
-            @PathVariable ModerationResult.ModerationCategory category) {
-        log.info("Retrieving moderations for category: {}", category);
-        List<ModerationResult> moderations = moderationService.getModerationsByCategory(category);
-        return ResponseEntity.ok(moderations);
-    }
+@Operation(summary = "Get moderations by category", description = "Retrieves moderations filtered by category")
+public ResponseEntity<List<ModerationResult>> getModerationsByCategory(
+        @PathVariable ModerationResult.ModerationCategory category) {
+    log.info("Retrieving moderations for category: {}", category);
+    List<ModerationResult> moderations = moderationService.getModerationsByCategory(category);
+    return ResponseEntity.ok(moderations);
+}
 
-    @GetMapping("/type/{contentType}")
-    @Operation(summary = "Get moderations by content type", description = "Retrieves moderations filtered by content type and approval status")
-    public ResponseEntity<List<ModerationResult>> getModerationsForContentType(
-            @PathVariable ModerationResult.ContentType contentType,
-            @RequestParam(defaultValue = "true") boolean approved) {
-        log.info("Retrieving {} moderations for content type: {}", approved ? "approved" : "rejected", contentType);
-        List<ModerationResult> moderations = moderationService.getModerationsForContentType(contentType, approved);
-        return ResponseEntity.ok(moderations);
-    }
-
-    @GetMapping("/health")
-    @Operation(summary = "Health check", description = "Verifies if the moderation service is up and running")
-    public ResponseEntity<String> healthCheck() {
-        return ResponseEntity.ok("Moderation service is running");
-    }
+@Operation(summary = "Get moderations by content type", description = "Retrieves moderations filtered by content type and approval status")
+public ResponseEntity<List<ModerationResult>> getModerationsByContentType(
+        @PathVariable ModerationResult.ContentType contentType) {
+    log.info("Retrieving moderations for content type: {}", contentType);
+    List<ModerationResult> moderations = moderationService.getModerationsByContentType(contentType);
+    return ResponseEntity.ok(moderations);
+}
 }

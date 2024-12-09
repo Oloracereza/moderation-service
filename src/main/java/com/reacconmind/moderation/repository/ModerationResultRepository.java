@@ -11,4 +11,5 @@ public interface ModerationResultRepository extends JpaRepository<ModerationResu
     List<ModerationResult> findByContentId(String contentId);
     List<ModerationResult> findByCategory(ModerationResult.ModerationCategory category);
     List<ModerationResult> findByContentTypeAndApproved(ModerationResult.ContentType contentType, boolean approved);
+    List<ModerationResult> findByContentType(ModerationResult.ContentType contentType);
 }

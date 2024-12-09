@@ -1,5 +1,6 @@
 package com.reacconmind.moderation.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -29,6 +30,7 @@ public class Moderation {
     @FutureOrPresent(message = "The date must be today or in the future")
     private LocalDateTime moderationDate;  
 
+    @Column(insertable = false, updatable = false)
     private Integer userId;
 
     private Integer reportedUserId;

@@ -7,16 +7,22 @@ import com.reacconmind.moderation.repository.ModerationResultRepository;
 import com.reacconmind.moderation.strategy.ModerationStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ModerationService {
+
+    private static final Logger log = LoggerFactory.getLogger(ModerationService.class);
 
     private final List<ModerationStrategy> moderationStrategies;
     private final ModerationResultRepository moderationResultRepository;
@@ -57,8 +63,8 @@ public class ModerationService {
         return moderationResultRepository.findByCategory(category);
     }
 
-    public List<ModerationResult> getModerationsForContentType(ModerationResult.ContentType contentType, boolean approved) {
-        return moderationResultRepository.findByContentTypeAndApproved(contentType, approved);
+    public List<ModerationResult> getModerationsByContentType(ModerationResult.ContentType contentType) {
+        return moderationResultRepository.findByContentType(contentType);
     }
 
     public void shutdown() {

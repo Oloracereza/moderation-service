@@ -3,10 +3,6 @@ package com.reacconmind.moderation.config;
 import com.azure.ai.textanalytics.TextAnalyticsClient;
 import com.azure.ai.textanalytics.TextAnalyticsClientBuilder;
 import com.azure.core.credential.AzureKeyCredential;
-import com.microsoft.azure.cognitiveservices.vision.contentmoderator.ContentModeratorClient;
-import com.microsoft.azure.cognitiveservices.vision.contentmoderator.ContentModeratorManager;
-import com.microsoft.rest.RestClient;
-import com.microsoft.rest.credentials.ServiceClientCredentials;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import okhttp3.OkHttpClient;
@@ -54,29 +50,38 @@ public class AzureConfig {
     }
 
     @Bean
-    public ContentModeratorClient contentModeratorClient() {
-        ServiceClientCredentials credentials = new ServiceClientCredentials() {
-            @Override
-            public void applyCredentialsFilter(OkHttpClient.Builder builder) {
-                builder.addInterceptor(chain -> {
-                    Request request = chain.request().newBuilder()
-                            .addHeader("Ocp-Apim-Subscription-Key", key)
-                            .build();
-                    return chain.proceed(request);
-                });
-            }
-        };
-
-        RestClient restClient = new RestClient.Builder()
-            .withBaseUrl(endpoint)
-            .withCredentials(credentials)
+    public OkHttpClient okHttpClient() {
+        return new OkHttpClient.Builder()
+            .addInterceptor(chain -> {
+                Request request = chain.request().newBuilder()
+                    .addHeader("Ocp-Apim-Subscription-Key", key)
+                    .build();
+                return chain.proceed(request);
+            })
             .build();
-
-        return ContentModeratorManager.authenticate(restClient);
     }
 
-    @Bean
-    public AzureKeyCredential azureKeyCredential() {
-        return new AzureKeyCredential(key);
+    public String getKey() {
+        return key;
+    }
+
+    public String getTextModerationEndpoint() {
+        return textModerationEndpoint;
+    }
+
+    public String getImageModerationEndpoint() {
+        return imageModerationEndpoint;
+    }
+
+    public double getAdultContentThreshold() {
+        return adultContentThreshold;
+    }
+
+    public double getRacyContentThreshold() {
+        return racyContentThreshold;
+    }
+
+    public int getMaxImageSizeBytes() {
+        return maxImageSizeBytes;
     }
 }

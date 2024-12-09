@@ -1,0 +1,434 @@
+CREATE DATABASE reacconMind;
+USE reacconMind;
+-- USE sys;
+-- DROP DATABASE reacconMind;
+
+CREATE TABLE User (
+                      idUser INT PRIMARY KEY AUTO_INCREMENT,
+                      name VARCHAR(100) NOT NULL,
+                      imageProfile VARCHAR(2083) NOT NULL, -- URL para la imagen de perfil
+                      imageFacade VARCHAR(2083) NOT NULL, -- URL para la imagen de fachada
+                      biography VARCHAR(50) NOT NULL,
+                      username VARCHAR(50) NOT NULL UNIQUE,
+                      thumbnail VARCHAR(2083),
+                      dateCreationProfile TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                      status ENUM ('Active','Inactive') DEFAULT 'Active'
+);
+
+CREATE TABLE ThemePreference (
+                                 idThemePreference INT PRIMARY KEY AUTO_INCREMENT,
+                                 themeBot ENUM('Sports', 'Technology', 'News', 'Music', 'Movies', 'CombinatedMedia') NOT NULL DEFAULT 'CombinatedMedia',
+                                 idUser INT,
+                                 FOREIGN KEY (idUser) REFERENCES User(idUser)
+);
+
+CREATE TABLE ProfileColor (
+                              idProfileColor INT PRIMARY KEY AUTO_INCREMENT,
+                              theme ENUM('Dark', 'Light') NOT NULL DEFAULT 'Light',
+                              idUser INT UNIQUE,
+                              FOREIGN KEY (idUser) REFERENCES User(idUser)
+);
+
+CREATE TABLE AccountUserEmail (
+                                  idAccountUserEmail INT PRIMARY KEY AUTO_INCREMENT,
+                                  email VARCHAR(50) NOT NULL UNIQUE,
+                                  password VARCHAR(255) NOT NULL,
+                                  idUser INT UNIQUE,
+                                  FOREIGN KEY (idUser) REFERENCES User(idUser) ON DELETE CASCADE
+);
+CREATE TABLE GoogleAuth (
+                            idGoogleAuth INT PRIMARY KEY AUTO_INCREMENT,
+                            idUser INT NOT NULL,
+                            googleId VARCHAR(255) NOT NULL UNIQUE,
+                            email VARCHAR(50) NOT NULL UNIQUE,
+                            FOREIGN KEY (idUser) REFERENCES User(idUser) ON DELETE CASCADE
+);
+
+
+CREATE TABLE Multimedia (
+                            idMultimedia INT PRIMARY KEY AUTO_INCREMENT,
+                            url VARCHAR(2083) NOT NULL,
+                            type ENUM('Image', 'Video', 'Audio') NOT NULL, -- Tipo de multimedia
+                            uploadDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Chat (
+                      idChat INT PRIMARY KEY AUTO_INCREMENT,
+                      idUser1 INT NOT NULL, -- Primer usuario en la conversación
+                      idUser2 INT NOT NULL, -- Segundo usuario en la conversación
+                      creationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Fecha de creación del chat
+                      FOREIGN KEY (idUser1) REFERENCES User(idUser) ON DELETE CASCADE,
+                      FOREIGN KEY (idUser2) REFERENCES User(idUser) ON DELETE CASCADE,
+                      CHECK (idUser1 <> idUser2) -- Asegura que no se cree un chat consigo mismo
+);
+
+CREATE TABLE Notification (
+                              idNotification INT PRIMARY KEY AUTO_INCREMENT,
+                              idUser INT NOT NULL,
+                              typeNotification ENUM('Message', 'Like', 'Follow', 'Comment', 'Alert') NOT NULL,
+                              content VARCHAR(100),
+                              state ENUM('Read', 'Unread') NOT NULL,
+                              dateNotification TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                              FOREIGN KEY (idUser) REFERENCES User(idUser) ON DELETE CASCADE
+);
+
+CREATE TABLE Message (
+                         idMessage INT PRIMARY KEY AUTO_INCREMENT,
+                         idChat INT NOT NULL,
+                         content TEXT NOT NULL,
+                         multimedia VARCHAR(255),
+                         shippingDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                         FOREIGN KEY (idChat) REFERENCES Chat(idChat) ON DELETE CASCADE
+);
+
+
+CREATE TABLE Bot (
+                     idBot INT PRIMARY KEY AUTO_INCREMENT,
+                     name VARCHAR(100) NOT NULL,
+                     theme ENUM('Sports', 'Technology', 'News', 'Music', 'Movies', 'CombinatedMedia') NOT NULL DEFAULT 'CombinatedMedia',
+                     shippingDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE Follower (
+                          idUserFollower INT NOT NULL,         -- El usuario que sigue
+                          idFollowing INT NOT NULL,            -- El usuario o bot seguido
+                          followingType ENUM('User', 'Bot') NOT NULL,  -- Indica si el seguido es un usuario o un bot
+                          dateFollowing TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                          PRIMARY KEY (idUserFollower, idFollowing, followingType),
+                          FOREIGN KEY (idUserFollower) REFERENCES User(idUser) ON DELETE CASCADE,  -- El seguidor debe ser un usuario
+    -- Validación basada en el tipo de seguidor
+                          FOREIGN KEY (idFollowing) REFERENCES User(idUser) ON DELETE CASCADE,
+                          FOREIGN KEY (idFollowing) REFERENCES Bot(idBot) ON DELETE CASCADE
+);
+
+CREATE TABLE Publication (
+                             idPublication INT PRIMARY KEY AUTO_INCREMENT,
+                             idUser INT,
+                             idBot INT, -- Nuevo campo para relación con bot
+                             content VARCHAR(250),
+                             publicationDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                             FOREIGN KEY (idUser) REFERENCES User(idUser) ON DELETE CASCADE,
+                             FOREIGN KEY (idBot) REFERENCES Bot(idBot) ON DELETE CASCADE, -- Relación entre publicación y bot
+                             CONSTRAINT checkUserOrBot
+                                 CHECK (idUser IS NOT NULL OR idBot IS NOT NULL)  -- Se asegura que al menos uno esté presente
+);
+
+CREATE TABLE Image (
+                       idImage INT PRIMARY KEY AUTO_INCREMENT,
+                       url VARCHAR(2083) NOT NULL,
+                       thumbnail VARCHAR(2083),
+                       uploadDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                       idPublication INT,
+                       FOREIGN KEY (idPublication) REFERENCES Publication(idPublication) ON DELETE CASCADE
+);
+
+CREATE TABLE Hashtag (
+                         idHashtag INT PRIMARY KEY AUTO_INCREMENT,
+                         name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE PublicationHashtag (
+                                    idPublication INT NOT NULL,
+                                    idHashtag INT NOT NULL,
+                                    FOREIGN KEY (idPublication) REFERENCES Publication(idPublication) ON DELETE CASCADE,
+                                    FOREIGN KEY (idHashtag) REFERENCES Hashtag(idHashtag) ON DELETE CASCADE,
+                                    PRIMARY KEY (idPublication, idHashtag) -- Llave primaria compuesta
+);
+
+CREATE TABLE Tendency (
+                          idTendency INT PRIMARY KEY AUTO_INCREMENT,
+                          name VARCHAR(100) NOT NULL,
+                          dateBegin TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                          dateEnd TIMESTAMP,
+                          CHECK (dateEnd IS NULL OR dateEnd >= dateBegin)
+);
+
+CREATE TABLE TendencyHashtag (
+                                 idTendency INT NOT NULL,
+                                 idHashtag INT NOT NULL,
+                                 FOREIGN KEY (idTendency) REFERENCES Tendency(idTendency) ON DELETE CASCADE,
+                                 FOREIGN KEY (idHashtag) REFERENCES Hashtag(idHashtag) ON DELETE CASCADE,
+                                 PRIMARY KEY (idTendency, idHashtag) -- Llave primaria compuesta
+);
+
+CREATE TABLE ModerationType (
+                                idModerationType INT PRIMARY KEY AUTO_INCREMENT,
+                                name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE Moderation (
+                            idUser INT NOT NULL,
+                            idPublication INT NOT NULL,
+                            idModerationType INT NOT NULL, -- Referencia a la tabla de tipos de moderación
+                            moderationDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (idUser) REFERENCES User(idUser) ON DELETE CASCADE,
+                            FOREIGN KEY (idPublication) REFERENCES Publication(idPublication) ON DELETE CASCADE,
+                            FOREIGN KEY (idModerationType) REFERENCES ModerationType(idModerationType) ON DELETE CASCADE,
+                            UNIQUE (idUser, idPublication, idModerationType), -- Llave única para evitar duplicados
+                            PRIMARY KEY (idUser, idPublication, idModerationType) -- Llave primaria compuesta
+);
+
+CREATE TABLE Comment (
+                         idComment INT PRIMARY KEY AUTO_INCREMENT,
+                         idUser INT NOT NULL,
+                         idPublication INT NOT NULL,
+                         contentComment VARCHAR(200) NOT NULL,
+                         commentDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                         FOREIGN KEY (idUser) REFERENCES User(idUser) ON DELETE CASCADE,
+                         FOREIGN KEY (idPublication) REFERENCES Publication(idPublication) ON DELETE CASCADE
+);
+
+CREATE TABLE Reply (
+                       idReply INT PRIMARY KEY AUTO_INCREMENT,
+                       idUser INT NOT NULL,
+                       idComment INT NOT NULL,
+                       contentReply VARCHAR(255) NOT NULL,
+                       replyDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                       FOREIGN KEY (idUser) REFERENCES User(idUser) ON DELETE CASCADE,
+                       FOREIGN KEY (idComment) REFERENCES Comment(idComment) ON DELETE CASCADE
+);
+
+CREATE TABLE Reaction (
+                          idUser INT NOT NULL,
+                          idPublication INT NOT NULL,
+                          liked BOOLEAN NOT NULL, -- true: le gusta, false: no le gusta
+                          reactionDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                          FOREIGN KEY (idUser) REFERENCES User(idUser) ON DELETE CASCADE,
+                          FOREIGN KEY (idPublication) REFERENCES Publication(idPublication) ON DELETE CASCADE,
+                          UNIQUE (idUser, idPublication), -- Evita múltiples reacciones
+                          PRIMARY KEY (idUser, idPublication) -- Llave primaria compuesta
+);
+
+CREATE TABLE MentionedUser (
+                               idPublication INT NOT NULL,
+                               idMentionedUser INT NOT NULL,
+                               FOREIGN KEY (idPublication) REFERENCES Publication(idPublication) ON DELETE CASCADE,
+                               FOREIGN KEY (idMentionedUser) REFERENCES User(idUser) ON DELETE CASCADE,
+                               UNIQUE (idPublication, idMentionedUser), -- Evita menciones duplicadas
+                               PRIMARY KEY (idPublication, idMentionedUser) -- Llave primaria compuesta
+);
+
+CREATE TABLE PasswordResetToken (
+                                    idResetToken INT PRIMARY KEY AUTO_INCREMENT,
+                                    idAccountUserEmail INT,
+                                    idGoogleAuth INT,
+                                    token VARCHAR(255) NOT NULL UNIQUE,
+                                    expirationDate TIMESTAMP NOT NULL DEFAULT (DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 20 MINUTE)),
+                                    used BOOLEAN DEFAULT FALSE,
+                                    FOREIGN KEY (idAccountUserEmail) REFERENCES AccountUserEmail(idAccountUserEmail) ON DELETE CASCADE,
+                                    FOREIGN KEY (idGoogleAuth) REFERENCES GoogleAuth(idGoogleAuth) ON DELETE CASCADE,
+                                    CHECK ((idAccountUserEmail IS NOT NULL AND idGoogleAuth IS NULL) OR (idAccountUserEmail IS NULL AND idGoogleAuth IS NOT NULL))
+);
+
+CREATE TABLE UserBlock (
+                           idBlock INT PRIMARY KEY AUTO_INCREMENT,
+                           idUser INT NOT NULL,                -- Usuario que bloquea
+                           idBlockedUser INT NOT NULL,         -- Usuario bloqueado
+                           blockDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                           FOREIGN KEY (idUser) REFERENCES User(idUser) ON DELETE CASCADE,
+                           FOREIGN KEY (idBlockedUser) REFERENCES User(idUser) ON DELETE CASCADE,
+                           UNIQUE (idUser, idBlockedUser)      -- Evita duplicados
+);
+
+
+
+-- Tabla User
+INSERT INTO User (name, imageProfile, imageFacade, biography, username, thumbnail) VALUES
+('Alice', 'https://example.com/profiles/alice.jpg', 'https://example.com/facades/alice.jpg', 'Hello, I am Alice!', 'alice123', 'https://example.com/thumbnails/alice.jpg'),
+('Bob', 'https://example.com/profiles/bob.jpg', 'https://example.com/facades/bob.jpg', 'Love coding!', 'bobby_dev', 'https://example.com/thumbnails/bob.jpg'),
+('Charlie', 'https://example.com/profiles/charlie.jpg', 'https://example.com/facades/charlie.jpg', 'Music enthusiast!', 'charlie_mus', 'https://example.com/thumbnails/charlie.jpg'),
+('Diana', 'https://example.com/profiles/diana.jpg', 'https://example.com/facades/diana.jpg', 'Avid reader', 'diana_books', 'https://example.com/thumbnails/diana.jpg'),
+('Eve', 'https://example.com/profiles/eve.jpg', 'https://example.com/facades/eve.jpg', 'Adventure lover', 'eve_explore', 'https://example.com/thumbnails/eve.jpg');
+
+-- Tabla ThemePreference
+INSERT INTO ThemePreference (themeBot, idUser) VALUES
+('Sports', 1),
+('Technology', 2),
+('News', 3),
+('Music', 4),
+('Movies', 5);
+
+-- Tabla ProfileColor
+INSERT INTO ProfileColor (theme, idUser) VALUES
+('Dark', 1),
+('Light', 2),
+('Dark', 3),
+('Light', 4),
+('Dark', 5);
+
+-- Tabla AccountUserEmail
+INSERT INTO AccountUserEmail (email, password, idUser) VALUES
+('alice@example.com', 'securepassword1', 1),
+('bob@example.com', 'securepassword2', 2),
+('charlie@example.com', 'securepassword3', 3),
+('diana@example.com', 'securepassword4', 4),
+('eve@example.com', 'securepassword5', 5);
+
+-- Tabla GoogleAuth
+INSERT INTO GoogleAuth (idUser, googleId, email) VALUES
+(1, 'google123', 'alice_google@example.com'),
+(2, 'google124', 'bob_google@example.com'),
+(3, 'google125', 'charlie_google@example.com'),
+(4, 'google126', 'diana_google@example.com'),
+(5, 'google127', 'eve_google@example.com');
+
+-- Tabla Multimedia
+INSERT INTO Multimedia (url, type) VALUES
+('https://example.com/media/image1.jpg', 'Image'),
+('https://example.com/media/video1.mp4', 'Video'),
+('https://example.com/media/audio1.mp3', 'Audio'),
+('https://example.com/media/image2.jpg', 'Image'),
+('https://example.com/media/video2.mp4', 'Video');
+
+-- Tabla Chat
+INSERT INTO Chat (idUser1, idUser2) VALUES
+(1, 2),
+(2, 3),
+(3, 4),
+(4, 5),
+(5, 1);
+
+-- Tabla Notification
+INSERT INTO Notification (idUser, typeNotification, content, state) VALUES
+(1, 'Message', 'You have a new message!', 'Unread'),
+(2, 'Like', 'Your post got a like!', 'Unread'),
+(3, 'Follow', 'Someone started following you!', 'Unread'),
+(4, 'Comment', 'You have a new comment!', 'Unread'),
+(5, 'Alert', 'Account security alert!', 'Unread');
+
+-- Tabla Message
+INSERT INTO Message (idChat, content, multimedia) VALUES
+(1, 'Hi, how are you?', NULL),
+(2, 'Check out this link!', 'https://example.com/resource'),
+(3, 'Let’s meet at 5 PM.', NULL),
+(4, 'Happy Birthday!', 'https://example.com/birthday/image.jpg'),
+(5, 'What’s up?', NULL);
+
+-- Tabla Bot
+INSERT INTO Bot (name, theme) VALUES
+('SportyBot', 'Sports'),
+('TechieBot', 'Technology'),
+('NewsBot', 'News'),
+('MusicBot', 'Music'),
+('MovieBot', 'Movies');
+
+-- Tabla Follower
+INSERT INTO Follower (idUserFollower, idFollowing, followingType) VALUES
+(1, 2, 'User'),
+(2, 3, 'User'),
+(3, 4, 'User'),
+(4, 5, 'User'),
+(1, 1, 'Bot');
+
+-- Tabla Publication
+INSERT INTO Publication (idUser, idBot, content) VALUES
+(1, NULL, 'Enjoying a sunny day!'),
+(NULL, 1, 'Today’s sports highlights.'),
+(2, NULL, 'Excited for the new tech trends!'),
+(NULL, 2, 'Latest gadgets unveiled.'),
+(3, NULL, 'The news you can’t miss.');
+
+-- Tabla Image
+INSERT INTO Image (url, thumbnail, idPublication) VALUES
+('https://example.com/images/pub1.jpg', 'https://example.com/thumbnails/pub1.jpg', 1),
+('https://example.com/images/pub2.jpg', 'https://example.com/thumbnails/pub2.jpg', 2),
+('https://example.com/images/pub3.jpg', 'https://example.com/thumbnails/pub3.jpg', 3),
+('https://example.com/images/pub4.jpg', 'https://example.com/thumbnails/pub4.jpg', 4),
+('https://example.com/images/pub5.jpg', 'https://example.com/thumbnails/pub5.jpg', 5);
+
+-- Tabla Hashtag
+INSERT INTO Hashtag (name) VALUES
+('#SunnyDay'),
+('#TechTrends'),
+('#SportsNews'),
+('#MusicLove'),
+('#MovieNight');
+
+-- Tabla PublicationHashtag
+INSERT INTO PublicationHashtag (idPublication, idHashtag) VALUES
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 4),
+(5, 5);
+
+-- Tabla Tendency
+INSERT INTO Tendency (name, dateBegin, dateEnd) VALUES
+('Trending Now', CURRENT_TIMESTAMP, NULL),
+('Daily Top', CURRENT_TIMESTAMP, NULL),
+('Hot Topics', CURRENT_TIMESTAMP, NULL),
+('Weekly Buzz', CURRENT_TIMESTAMP, NULL),
+('Breaking News', CURRENT_TIMESTAMP, NULL);
+
+-- Tabla TendencyHashtag
+INSERT INTO TendencyHashtag (idTendency, idHashtag) VALUES
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 4),
+(5, 5);
+
+-- Tabla ModerationType
+INSERT INTO ModerationType (name) VALUES
+('Spam'),
+('Offensive Content'),
+('Copyright Violation'),
+('Misinformation'),
+('Inappropriate Language');
+
+-- Tabla Moderation
+INSERT INTO Moderation (idUser, idPublication, idModerationType) VALUES
+(1, 1, 1),
+(2, 2, 2),
+(3, 3, 3),
+(4, 4, 4),
+(5, 5, 5);
+
+-- Tabla Comment
+INSERT INTO Comment (idUser, idPublication, contentComment) VALUES
+(1, 1, 'Great post!'),
+(2, 2, 'Amazing content!'),
+(3, 3, 'Very insightful.'),
+(4, 4, 'Love this!'),
+(5, 5, 'Thanks for sharing.');
+
+-- Tabla Reply
+INSERT INTO Reply (idUser, idComment, contentReply) VALUES
+(2, 1, 'Thank you!'),
+(3, 2, 'Glad you liked it!'),
+(4, 3, 'Appreciate it!'),
+(5, 4, 'Means a lot!'),
+(1, 5, 'You’re welcome!');
+
+-- Tabla Reaction
+INSERT INTO Reaction (idUser, idPublication, liked) VALUES
+(1, 1, TRUE),
+(2, 2, TRUE),
+(3, 3, TRUE),
+(4, 4, TRUE),
+(5, 5, TRUE);
+
+-- Tabla MentionedUser
+INSERT INTO MentionedUser (idPublication, idMentionedUser) VALUES
+(1, 2),
+(2, 3),
+(3, 4),
+(4, 5),
+(5, 1);
+
+-- Tabla PasswordResetToken
+INSERT INTO PasswordResetToken (idAccountUserEmail, idGoogleAuth, token) VALUES
+(1, NULL, 'reset_token_1'),
+(2, NULL, 'reset_token_2'),
+(3, NULL, 'reset_token_3'),
+(4, NULL, 'reset_token_4'),
+(NULL, 5, 'reset_token_5');
+
+-- Tabla UserBlock
+INSERT INTO UserBlock (idUser, idBlockedUser) VALUES
+(1, 2),
+(2, 3),
+(3, 4),
+(4, 5),
+(5, 1);
